@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Atletas | Atlética IFTO</title>
+    <link rel="stylesheet" th:href="@{/css/atletica.css}">
+</head>
+<body>
+<div class="app-shell">
+    <aside class="sidebar">
+        <a class="brand" th:href="@{/atleta/list}">
+            <span class="brand-mark">A</span>
+            <span><strong>ATLÉTICA</strong><small>IFTO • gestão esportiva</small></span>
+        </a>
+        <nav class="side-nav" aria-label="Navegação principal">
+            <a class="nav-link active" th:href="@{/atleta/list}"><span class="nav-icon">⌂</span>Atletas</a>
+            <a class="nav-link" th:href="@{/atleta/form}"><span class="nav-icon">＋</span>Novo cadastro</a>
+        </nav>
+        <div class="sidebar-footer"><span class="status-dot"></span>Sistema ativo</div>
+    </aside>
+
+    <main class="content">
+        <header class="topbar">
+            <div>
+                <p class="eyebrow">Painel administrativo</p>
+                <h1>Atletas</h1>
+                <p class="subtitle" th:text="${filtroAtivo ? 'Confira os atletas da modalidade selecionada.' : 'Acompanhe os integrantes cadastrados na atlética.'}">Acompanhe os integrantes cadastrados na atlética.</p>
+            </div>
+            <a class="button button-primary" th:href="@{/atleta/form}"><span>＋</span>Novo atleta</a>
+        </header>
+
+        <section class="overview-grid" aria-label="Resumo dos atletas">
+            <article class="stat-card accent-card">
+                <div class="stat-icon">◈</div>
+                <div><span class="stat-label" th:text="${filtroAtivo ? 'Atletas filtrados' : 'Atletas exibidos'}">Atletas exibidos</span><strong class="stat-value" th:text="${#lists.size(atletas)}">0</strong></div>
+            </article>
+            <article class="stat-card">
+                <div class="stat-icon muted-icon">✓</div>
+                <div><span class="stat-label">Total cadastrado</span><strong class="stat-value" th:text="${totalAtletas}">0</strong></div>
+            </article>
+            <article class="stat-card">
+                <div class="stat-icon soft-icon">▦</div>
+                <div><span class="stat-label">Modalidades</span><strong class="stat-value" th:text="${totalModalidades}">0</strong></div>
+            </article>
+        </section>
+
+        <section class="filter-panel" aria-labelledby="filter-title">
+            <div class="filter-intro">
+                <span class="filter-icon">⌕</span>
+                <div>
+                    <h2 id="filter-title">Filtrar atletas</h2>
+                    <p>Encontre rapidamente os integrantes por modalidade.</p>
+                </div>
+            </div>
+            <form class="filter-form" th:action="@{/atleta/list}" method="get">
+                <label class="filter-field" for="modalidadeFiltro">
+                    <span>Modalidade</span>
+                    <select id="modalidadeFiltro" name="modalidadeId">
+                        <option value="">Todas as modalidades</option>
+                        <option th:each="modalidade : ${modalidades}"
+                                th:value="${modalidade.id}"
+                                th:selected="${modalidadeSelecionada != null and modalidadeSelecionada.id == modalidade.id}"
+                                th:text="${modalidade.nome}">Modalidade</option>
+                    </select>
+                </label>
+                <div class="filter-actions">
+                    <button class="button button-primary" type="submit">Aplicar filtro</button>
+                    <a class="clear-filter" th:if="${filtroAtivo}" th:href="@{/atleta/list}">Limpar filtro</a>
+                </div>
+            </form>
+        </section>
+
+        <section class="panel">
+            <div class="panel-heading">
+                <div>
+                    <p class="panel-kicker" th:if="${filtroAtivo}">Modalidade selecionada</p>
+                    <h2 th:text="${filtroAtivo ? modalidadeSelecionada.nome : 'Lista de atletas'}">Lista de atletas</h2>
+                    <p th:text="${filtroAtivo ? 'Visualizando somente os atletas desta modalidade.' : 'Visualize, edite ou remova os cadastros.'}">Visualize, edite ou remova os cadastros.</p>
+                </div>
+                <span class="counter" th:text="${#lists.size(atletas) + (#lists.size(atletas) == 1 ? ' registro' : ' registros')}">0 registros</span>
+            </div>
+
+            <div class="table-wrap" th:if="${not #lists.isEmpty(atletas)}">
+                <table>
+                    <thead><tr><th>Atleta</th><th>Matrícula</th><th>Modalidade</th><th>Nascimento</th><th class="actions-heading">Ações</th></tr></thead>
+                    <tbody>
+                    <tr th:each="atleta : ${atletas}">
+                        <td>
+                            <div class="athlete-cell">
+                                <span class="avatar" th:text="${#strings.substring(atleta.nome, 0, 1).toUpperCase()}">A</span>
+                                <div><strong th:text="${atleta.nome}">Nome do atleta</strong><small th:text="${atleta.celular != null and !atleta.celular.isBlank() ? atleta.celular : 'Celular não informado'}">Celular</small></div>
+                            </div>
+                        </td>
+                        <td th:text="${atleta.matricula != null and !atleta.matricula.isBlank() ? atleta.matricula : '—'}">—</td>
+                        <td><span class="tag" th:text="${atleta.modalidade != null ? atleta.modalidade.nome : 'Sem modalidade'}">Modalidade</span></td>
+                        <td th:text="${atleta.dataNascimento != null ? #temporals.format(atleta.dataNascimento, 'dd/MM/yyyy') : '—'}">—</td>
+                        <td>
+                            <div class="row-actions">
+                                <a class="icon-button" th:href="@{/atleta/edit/{id}(id=${atleta.id})}" title="Editar atleta" aria-label="Editar atleta">✎</a>
+                                <form th:action="@{/atleta/remove/{id}(id=${atleta.id})}" method="post" onsubmit="return confirm('Deseja remover este atleta?');">
+                                    <button class="icon-button danger" type="submit" title="Remover atleta" aria-label="Remover atleta">×</button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="empty-state" th:if="${#lists.isEmpty(atletas)}">
+                <span class="empty-icon">◈</span>
+                <h3 th:text="${filtroAtivo ? 'Nenhum atleta nesta modalidade' : 'Nenhum atleta cadastrado'}">Nenhum atleta cadastrado</h3>
+                <p th:text="${filtroAtivo ? 'Tente escolher outra modalidade ou limpe o filtro para ver todos os atletas.' : 'Comece adicionando o primeiro integrante da atlética.'}">Comece adicionando o primeiro integrante da atlética.</p>
+                <a class="button button-secondary" th:if="${filtroAtivo}" th:href="@{/atleta/list}">Limpar filtro</a>
+                <a class="button button-primary" th:unless="${filtroAtivo}" th:href="@{/atleta/form}">Cadastrar atleta</a>
+            </div>
+        </section>
+    </main>
+</div>
+</body>
+</html>
